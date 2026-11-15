@@ -3,13 +3,15 @@ package com.zonemod;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.io.IOException;
@@ -20,7 +22,7 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 public class ZoneModClient implements ClientModInitializer {
-    private static final String CATEGORY = "category.zonemod";
+    private static KeyBinding.Category CATEGORY;
 
     private static KeyBinding toggleKey;
     private static KeyBinding modeKey;
@@ -37,6 +39,8 @@ public class ZoneModClient implements ClientModInitializer {
     public void onInitializeClient() {
         configPath = FabricLoader.getInstance().getConfigDir().resolve("zonemod.properties");
         load();
+
+        CATEGORY = KeyBinding.Category.create(Identifier.of("zonemod", "main"));
 
         toggleKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.zonemod.toggle", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_Z, CATEGORY));
@@ -70,9 +74,12 @@ public class ZoneModClient implements ClientModInitializer {
             }
         });
 
-        HudRenderCallback.EVENT.register((context, tickCounter) -> {
-            if (enabled) render(context);
-        });
+        HudElementRegistry.attachElementBefore(
+                VanillaHudElements.CHAT,
+                Identifier.of("zonemod", "zone_overlay"),
+                (context, tickCounter) -> {
+                    if (enabled) render(context);
+                });
     }
 
     private static void msg(MinecraftClient client, String text) {
